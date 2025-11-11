@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <title>Beatrice Shilling</title>
+
+  <style>
+* { -webkit-tap-highlight-color: transparent; -webkit-user-drag: none; }
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 15px;
+  background: #111;
+  color: white;
+  font-family: sans-serif;
+  gap: 10px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+h1 {
+  width: 100%;
+  text-align: center;
+  margin: 0 auto;
+  font-size: clamp(24px, 4vw, 48px);
+  margin-bottom: clamp(10px, 2vw, 30px); /* ✅ espace responsive */
+}
+
+h2 {
+  width: 100%;
+  text-align: center;
+  margin: 0 auto;
+  font-size: clamp(18px, 3vw, 32px);
+  margin-top: clamp(5px, 1.5vw, 20px); /* ✅ espace responsive */
+}
+
+.slider {
+  position: relative;
+  width: 90%;
+  max-width: 700px;
+  margin: 0 auto;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
+  background: #000;
+}
+
+.slides {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+  width: 100%;
+  height: 100%;
+}
+
+.slides img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #555;
+  flex-shrink: 0;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+  gap: 8px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #777;
+  cursor: pointer;
+  transition: background .3s, transform .3s;
+}
+
+.dot.active {
+  background: #00b4ff;
+  transform: scale(1.3);
+}
+
+/* bouton play pause */
+.play-btn {
+  margin-top: 10px;
+  padding: 8px 18px;
+  background: #222;
+  border: none;
+  color: white;
+  font-size: 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
+  transition: background .2s;
+}
+.play-btn:hover { background: #333; }
+
+/* réglages vitesse */
+.settings-btn {
+  position: fixed;
+  bottom: 15px;
+  right: 15px;
+  background: #222;
+  color: white;
+  font-size: 20px;
+  padding: 10px 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0,0,0,0.4);
+  z-index: 1000;
+}
+
+.settings-panel {
+  position: fixed;
+  bottom: 60px;
+  right: 15px;
+  background: rgba(20,20,20,0.95);
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: none;
+  color: white;
+  font-size: 14px;
+}
+
+.settings-panel select {
+  margin-top: 5px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: none;
+  background: #333;
+  color: white;
+}
+
+.message-petit-ecran {
+  visibility: hidden;
+  text-align: center;
+  color: #ffb400;
+  font-size: .95rem;
+  display: none;
+}
+
+@media (max-width:600px) {
+  .message-petit-ecran { visibility: visible; display: block; }
+}
+  </style>
+</head>
+
+<body>
+
+<h1>Beatrice Shilling</h1>
+<h2 id="slider-title">Image 1/5 : negative gravity</h2>
+
+<!-- menu vitesse -->
+<div class="settings-btn" id="openSettings">⚙️</div>
+<div class="settings-panel" id="settingsPanel">
+  <label>Vitesse du défilement :</label><br>
+  <select id="vitesse">
+    <option value="5000">5 s</option>
+    <option value="10000" selected>10 s</option>
+    <option value="15000">15 s</option>
+  </select>
+</div>
+
+<div class="slider">
+  <div class="slides">
+    <img src="./photo 1.jpg" alt="Photo 1">
+    <img src="./photo 2.jpg" alt="Photo 2">
+    <img src="./photo 3.jpg" alt="Photo 3">
+    <img src="./Photo 4.jpg" alt="Photo 4">
+    <img src="./Photo 5.jpg" alt="Photo 5">
+  </div>
+</div>
+
+<div class="dots"></div>
+
+<!-- Play / Pause -->
+<button class="play-btn" id="playPause">⏸️ Pause</button>
+
+<p class="message-petit-ecran">Si le site ne s’affiche pas bien en portrait, passez en paysage</p>
+
+<script>
+const slides = document.querySelector('.slides');
+const images = document.querySelectorAll('.slides img');
+const title = document.getElementById('slider-title');
+const dotsContainer = document.querySelector('.dots');
+const playBtn = document.getElementById("playPause");
+
+let index = 0;
+let slideDelay = 10000;
+let isPlaying = true;
+const speedSelect = document.getElementById("vitesse");
+
+const titles = [
+  "Image 1/5 : negative gravity",
+  "Image 2/5 : leading motorboke racer",
+  "Image 3/5 : during her studies",
+  "Image 4/5 : the woman who could fix anything",
+  "Image 5/5 : RAF engineer for Spitfire pilots"
+];
+
+images.forEach((_, i) => {
+  const dot = document.createElement('div');
+  dot.classList.add('dot');
+  if (i === 0) dot.classList.add('active');
+  dot.addEventListener('click', () => {
+    index = i;
+    showSlide();
+    resetAutoPlay();
+  });
+  dotsContainer.appendChild(dot);
+});
+
+function updateDots() {
+  document.querySelectorAll('.dot').forEach((dot, i) =>
+    dot.classList.toggle('active', i === index)
+  );
+}
+
+function showSlide() {
+  slides.style.transform = `translateX(${-index * slides.clientWidth}px)`;
+  title.textContent = titles[index];
+  updateDots();
+}
+
+function nextSlide() {
+  index = (index + 1) % images.length;
+  showSlide();
+}
+
+let autoPlay = setInterval(nextSlide, slideDelay);
+
+function resetAutoPlay() {
+  clearInterval(autoPlay);
+  if (isPlaying) autoPlay = setInterval(nextSlide, slideDelay);
+}
+
+speedSelect.addEventListener("change", () => {
+  slideDelay = Number(speedSelect.value);
+  resetAutoPlay();
+});
+
+/************* PLAY / PAUSE BUTTON *************/
+playBtn.addEventListener("click", () => {
+  isPlaying = !isPlaying;
+  if (isPlaying) {
+    playBtn.textContent = "⏸️ Pause";
+    autoPlay = setInterval(nextSlide, slideDelay);
+  } else {
+    playBtn.textContent = "▶️ Lecture";
+    clearInterval(autoPlay);
+  }
+});
+
+/******** swipe ********/
+let startX = 0;
+slides.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+slides.addEventListener('touchend', e => handleSwipe(e.changedTouches[0].clientX));
+slides.addEventListener('mousedown', e => startX = e.clientX);
+slides.addEventListener('mouseup', e => handleSwipe(e.clientX));
+
+function handleSwipe(endX) {
+  const diff = startX - endX;
+  if (diff > 50) index = (index + 1) % images.length;
+  else if (diff < -50) index = (index - 1 + images.length) % images.length;
+  showSlide();
+  resetAutoPlay();
+}
+
+/******** menu réglages ********/
+const settingsBtn = document.getElementById("openSettings");
+const settingsPanel = document.getElementById("settingsPanel");
+
+settingsBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = settingsPanel.style.display === "block";
+  settingsPanel.style.display = open ? "none" : "block";
+});
+
+document.addEventListener("click", (e) => {
+  if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
+    settingsPanel.style.display = "none";
+  }
+});
+
+window.addEventListener('resize', showSlide);
+</script>
+
+</body>
+</html>
